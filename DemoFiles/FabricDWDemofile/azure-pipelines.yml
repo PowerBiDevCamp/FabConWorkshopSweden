@@ -1,0 +1,179 @@
+## Starter pipeline
+## Start with a minimal pipeline that you can customize to build and deploy your code.
+## Add steps that build, run tests, deploy, and more:
+## https://aka.ms/yaml
+#
+trigger:
+- main
+
+pool:
+     vmImage: 'windows-latest'
+
+stages:
+
+- stage: Build_and_Publish
+  displayName: 'Build and Publish dacpac project'
+
+  jobs:
+    - job: 'Builddacpac'
+      displayName: 'Build Fabric DW dacpac'
+      
+
+      steps:
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Build the dacpac using dotnet'
+        inputs:
+          command: 'build'
+          projects: '*/*.sqlproj'
+          arguments: '--configuration $(BuildConfiguration)'
+
+      
+      - task: CopyFiles@2
+        displayName: 'Copy dacpac tools to staging directory'
+        inputs:
+          SourceFolder: '$(system.defaultworkingdirectory)'
+          Contents: '**\bin\$(BuildConfiguration)\**'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Pipeline Artifact'
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          ArtifactName: 'dacpac'
+          publishLocation: 'Container'
+
+
+
+- stage: DeployDev
+  displayName: 'Deploy DACPAC using SQL Package to DEV'
+  dependsOn: Build_and_Publish
+  condition: succeeded()
+  jobs:
+   - job: Deploy_DW_Project
+     steps:
+     - task: DownloadBuildArtifacts@1
+       inputs:
+        buildType: 'current'
+        downloadType: 'specific'
+        artifactName: 'dacpac'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+
+     - task: SqlAzureDacpacDeployment@1
+       displayName: 'Install DACPAC on Fabric DataWarehouse'
+       inputs:
+        azureSubscription: 'Azure'
+        AuthenticationType: 'servicePrincipal'
+        ServerName: $(sqlServerNameDev)
+        DatabaseName: $(sqlDatabaseName)
+        deployType: 'DacpacTask'
+        DeploymentAction: 'Publish'
+        DacpacFile: '$(System.ArtifactsDirectory)\*/*/*/*/*.dacpac'
+
+
+
+- stage: DeployTest
+  displayName: 'Deploy DACPAC using SQL Package to Test'
+  dependsOn: DeployDev
+  condition: succeeded()
+  jobs:
+  - deployment: 'DeployToTest'
+    environment: 'dw-test'
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+                  - task: DownloadBuildArtifacts@1
+                    inputs:
+                      buildType: 'current'
+                      downloadType: 'specific'
+                      artifactName: 'dacpac'
+                      downloadPath: '$(System.ArtifactsDirectory)'
+                  
+
+                  - task: SqlAzureDacpacDeployment@1
+                    displayName: 'Install DACPAC on Fabric DataWarehouse'
+                    inputs:
+                      azureSubscription: 'Azure'
+                      AuthenticationType: 'servicePrincipal'
+                      ServerName: $(sqlServerNameTest)
+                      DatabaseName: $(sqlDatabaseNameTest)
+                      deployType: 'DacpacTask'
+                      DeploymentAction: 'Publish'
+                      DacpacFile: '$(System.ArtifactsDirectory)\*/*/*/*/*.dacpac'
+
+- stage: Security_post_deployement_task_Test
+  displayName: 'Security_post_deployement_task to Test'
+  dependsOn: DeployTest
+  condition: succeeded()
+  jobs:
+  - job: Deploy_Security_membership
+    steps:
+    - checkout: self  # Ensures the repository is checked out in the pipeline
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/Security'
+        Contents: 'prod_security_membership.sql'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+    - powershell: |
+        $outputSqlFile = "$(Build.ArtifactStagingDirectory)\prod_security_membership.sql"
+        $connectionString = "Server=$(sqlServerNameTest);Database=$(sqlDatabaseNameTest);Authentication=Active Directory Password;User ID=$(username);Password=$(password);"
+        Invoke-Sqlcmd -ConnectionString $connectionString -InputFile $outputSqlFile
+
+
+
+
+
+- stage: DeployProd
+  displayName: 'Deploy DACPAC using SQL Package to Prod'
+  dependsOn: Security_post_deployement_task_Test
+  condition: succeeded()
+  jobs:
+     - deployment: 'DeployToProd'
+       environment: 'dw-prod'
+       strategy:
+          runOnce:
+            deploy:
+              steps:
+                  - task: DownloadBuildArtifacts@1
+                    inputs:
+                      buildType: 'current'
+                      downloadType: 'specific'
+                      artifactName: 'dacpac'
+                      downloadPath: '$(System.ArtifactsDirectory)'
+                  
+
+                  - task: SqlAzureDacpacDeployment@1
+                    displayName: 'Install DACPAC on Fabric DataWarehouse'
+                    inputs:
+                      azureSubscription: 'Azure'
+                      AuthenticationType: 'servicePrincipal'
+                      ServerName: $(sqlServerNameProd)
+                      DatabaseName: $(sqlDatabaseNameProd)
+                      deployType: 'DacpacTask'
+                      DeploymentAction: 'Publish'
+                      DacpacFile: '$(System.ArtifactsDirectory)\*/*/*/*/*.dacpac'
+
+
+- stage: Security_post_deployement_task_Prod
+  displayName: 'Security_post_deployement_task to Prod'
+  dependsOn: DeployProd
+  condition: succeeded()
+  jobs:
+  - job: Deploy_Security_membership
+    steps:
+    - checkout: self  # Ensures the repository is checked out in the pipeline
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/Security'
+        Contents: 'prod_security_membership.sql'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          $outputSqlFile = "$(Build.ArtifactStagingDirectory)\prod_security_membership.sql"
+                  $connectionString = "Server=$(sqlServerNameProd);Database=$(sqlDatabaseNameProd);Authentication=Active Directory Service Principal;UID=$(clientId);PWD=$(clientSecret);"
+                  Invoke-Sqlcmd -ConnectionString $connectionString -InputFile $outputSqlFile
