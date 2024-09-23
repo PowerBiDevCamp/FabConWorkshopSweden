@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "FOjlcyiOfAE=",
+  "success": true,
+  "projectFilePath": "c:\\Users\\bhassharma\\OneDrive - Microsoft\\Documents\\CSE\\Fabric\\EuroFabconf\\DWDemoCICD\\DatabaseProjectFabricDevDW\\DatabaseProjectFabricDevDW.sqlproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\bhassharma\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.0\\microsoft.netframework.referenceassemblies.1.0.0.nupkg.sha512",
+    "C:\\Users\\bhassharma\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net46\\1.0.0\\microsoft.netframework.referenceassemblies.net46.1.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

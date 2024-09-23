@@ -1,0 +1,1 @@
+grant select on [order] to [Joseph@bhaskartcshotmail603.onmicrosoft.com]

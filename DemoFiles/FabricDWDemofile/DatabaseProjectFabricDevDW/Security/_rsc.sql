@@ -1,0 +1,6 @@
+CREATE SCHEMA [_rsc]
+    AUTHORIZATION [dbo];
+
+
+GO
+
