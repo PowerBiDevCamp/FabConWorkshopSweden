@@ -1,0 +1,4 @@
+variables:
+ DEFFAULT_LAKEHOUSE_NAME: "wwilakehouse"
+ UPD_NOTEBOOK_NAME: "updateWorkspaceDependencies_v1"
+ WORKSPACE_ID: "e41a8914-efae-47fc-b00c-d8347dfb3616"
