@@ -95,6 +95,7 @@ def update_workspace_from_GIT(workspace_id, token):
                 #operation = update_response.headers.get("x-ms-operation-id")
                 print(f"Polling URL to track operation status is {location_url}")
                 #print(f"Polling URL to track operation status is {operation}")
+               time.sleep(20)
                 poll_lro_get_status(location_url, headers, 10)
 
             else:
@@ -271,7 +272,7 @@ def main_func():
    update_workspace_from_GIT(WORKSPACE_ID,access_token)
    invoke_fabric_notebook(WORKSPACE_ID, UPD_NOTEBOOK_NAME, DEFFAULT_LAKEHOUSE_NAME,access_token)
    workspace_head = get_git_status(WORKSPACE_ID, access_token)   
-   time.sleep(360)
+   time.sleep(600)
    commit_all_items_to_git(WORKSPACE_ID,workspace_head,access_token)   
    print("Program Completed")
  
