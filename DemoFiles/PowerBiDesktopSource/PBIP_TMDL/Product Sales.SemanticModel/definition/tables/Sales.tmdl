@@ -1,0 +1,142 @@
+table Sales
+	lineageTag: ad4c8f4d-6088-48af-87c6-3994a23b98d2
+
+	measure 'Sales Revenue' = Sum(Sales[Sales])
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: 5ea1636a-303f-44db-b500-622529d0749d
+
+	measure 'Customer Count' = DISTINCTCOUNT(Sales[CustomerId])
+		formatString: #,0
+		lineageTag: 94141404-6d60-41fe-a767-7af9150d25b2
+
+	measure 'First Sale' = FIRSTDATE(Sales[Date])
+		formatString: Short Date
+		lineageTag: 57b47456-57b9-4248-9600-2497e60f375c
+
+	measure 'Last Sale' = LASTDATE(Sales[Date])
+		formatString: Short Date
+		lineageTag: d1101050-6e52-453f-87df-58bdcb744a13
+
+	measure 'Units Sold' = SUM(Sales[Quantity])
+		formatString: #,0
+		lineageTag: 5e914420-dc4c-4a47-b376-6fd6ade30050
+
+	measure 'Customer Rank' = ```
+			
+			IF( 
+			  HASONEVALUE(Customers[CustomerId]), 
+			  RANKX( 
+			    ALLSELECTED(Customers), 
+			    CALCULATE([Sales Revenue])
+			  )
+			)
+			```
+		formatString: 0
+		lineageTag: 2f823a25-58db-4640-bc89-c14c94552f4b
+
+	measure 'Product Rank' = ```
+			
+			IF( 
+			  HASONEVALUE(Products[Product]), 
+			  RANKX( 
+			    ALLSELECTED(Products), 
+			    CALCULATE([Sales Revenue])
+			  )
+			)
+			```
+		formatString: 0
+		lineageTag: cc3f8a68-da6d-4f12-9b75-9d12af58fedf
+
+	column Id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7b8ca442-d6cb-41af-a75f-00c51e3edb07
+		summarizeBy: count
+		sourceColumn: Id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ef8b2dda-912f-46e3-9fa1-620ab36917ee
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sales
+		dataType: decimal
+		isHidden
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		lineageTag: 4deb920d-252b-4ed5-a006-f275ad969414
+		summarizeBy: sum
+		sourceColumn: Sales
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	column ProductId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: edf092b6-d8aa-47f6-ad9d-2283abdce11d
+		summarizeBy: none
+		sourceColumn: ProductId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: b8975c2f-ecd5-4530-ab1c-3a6a8cb77a7a
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column CustomerId
+		dataType: string
+		isHidden
+		lineageTag: eb7585d6-536b-43bd-914c-acd6af6fc9c7
+		summarizeBy: none
+		sourceColumn: CustomerId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Sales = m
+		mode: import
+		source = ```
+				let
+				    Source = Csv.Document(Web.Contents(CSV_FILE_ROOT, [RelativePath="InvoiceDetails.csv"]),[Delimiter=",", Columns=5, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Merged Queries" = Table.NestedJoin(PromotedHeaders, {"InvoiceId"}, Invoices, {"InvoiceId"}, "Invoices", JoinKind.LeftOuter),
+				    #"Expanded Invoices" = Table.ExpandTableColumn(#"Merged Queries", "Invoices", {"Date", "CustomerId"}, {"Date", "CustomerId"}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Expanded Invoices",{"InvoiceId"}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Removed Columns",{{"ProductId", Int64.Type}}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"SalesAmount", "Sales"}}),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns",{{"Id", Int64.Type}, {"Quantity", Int64.Type}, {"Sales", Currency.Type}, {"Date", type date}})
+				in 
+				   #"Changed Type1"
+				```
+
+	annotation PBI_ResultType = Table
+

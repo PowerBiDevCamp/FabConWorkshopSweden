@@ -1,0 +1,111 @@
+table Calendar
+	lineageTag: d6febbe9-b14f-46b9-b0ec-00cd13e954e5
+
+	column Date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: fe811ca5-2a1a-42a3-b4b1-81c685a124a3
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 4a439f61-5c7e-46cf-9e3b-2d428ecd778b
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [Year]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quarter
+		dataType: string
+		lineageTag: 358cef97-fc10-49ab-89b1-cd4a1be50ab8
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [Quarter]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: string
+		lineageTag: c16b1694-33a7-4d37-bbed-00d105532540
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [Month]
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthInYear
+		dataType: string
+		lineageTag: 911f3a33-7af2-4ecd-ab66-e054a1b67248
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [MonthInYear]
+		sortByColumn: MonthInYearSort
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthInYearSort
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ed2b0c21-2745-4a65-bde4-4138b0572276
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [MonthInYearSort]
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeek
+		dataType: string
+		lineageTag: d067e4a2-0cd8-4c9f-af72-57c30c35a744
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [DayOfWeek]
+		sortByColumn: DayOfWeekSort
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeekSort
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 487997ff-fe9d-46fb-ae23-05503390d726
+		summarizeBy: none
+		isNameInferred
+		isDataTypeInferred
+		sourceColumn: [DayOfWeekSort]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Calendar = calculated
+		mode: import
+		source = ```
+				
+				Var CalenderStart = Date(Year(Min(Sales[Date])) , 1, 1)  
+				Var CalendarEnd = Date(Year(MAX(Sales[Date])), 12, 31)
+				Return ADDCOLUMNS(
+				    CALENDAR(CalenderStart, CalendarEnd),
+				    "Year", Year([Date]),
+				    "Quarter", FORMAT([Date], "yyyy-\Qq"),
+				    "Month", FORMAT([Date], "yyyy-dd"),
+				    "MonthInYear", FORMAT([Date], "mmmm"),
+				    "MonthInYearSort", MONTH([Date]),
+				    "DayOfWeek", FORMAT([Date], "dddd"),
+				    "DayOfWeekSort", WEEKDAY([Date])
+				)
+				```
+
+	annotation PBI_Id = a13d46442e704e5eb4dc38fb51ece3e7
+
