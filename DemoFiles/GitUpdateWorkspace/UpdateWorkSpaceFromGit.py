@@ -271,8 +271,9 @@ def main_func():
    access_token = acquire_token_user_id_password(TENANT_ID, CLIENT_ID,USERNAME,PASSWORD)     
    update_workspace_from_GIT(WORKSPACE_ID,access_token)
    invoke_fabric_notebook(WORKSPACE_ID, UPD_NOTEBOOK_NAME, DEFFAULT_LAKEHOUSE_NAME,access_token)
-   workspace_head = get_git_status(WORKSPACE_ID, access_token)   
+     
    time.sleep(600)
+   workspace_head = get_git_status(WORKSPACE_ID, access_token) 
    commit_all_items_to_git(WORKSPACE_ID,workspace_head,access_token)   
    print("Program Completed")
  
