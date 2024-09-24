@@ -1,0 +1,38 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+variables:
+ - template: templates/variables_templates.yml
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+ - stage: CreateWorkspace
+   jobs:
+    - job: 'KeyVault'
+      steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'FabricSPNConnection'
+              KeyVaultName: 'credential-store-demos'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+
+          - script: pip install requests
+            displayName: 'Install requests'
+          - script: pip install msal
+            displayName: 'Install msal'
+          - script: |
+              echo Add other tasks to build, test, and deploy your project.
+              echo See https://aka.ms/yaml
+            displayName: 'Run a multi-line script'
+
+          - task: PythonScript@0
+            inputs:
+              scriptSource: 'filePath'
+              scriptPath: 'BranchOut-Feature-Workspace-Automation.py'
+              arguments: '--ADO_ORG_NAME ${{variables.ADO_ORG_NAME}} --ADO_REPO_NAME ${{variables.ADO_REPO_NAME}} --ADO_PROJECT_NAME ${{variables.ADO_PROJECT_NAME}} --ADO_NEW_BRANCH ${{variables.ADO_NEW_BRANCH}} --DEVELOPER_ID ${{variables.DEVELOPER_ID}} --WORKSPACE_NAME ${{variables.WORKSPACE_NAME}} --CAPACITY_ID ${{variables.CAPACITY_ID}} --ADO_API_URL ${{variables.ADO_API_URL}} --ADO_MAIN_BRANCH ${{variables.ADO_MAIN_BRANCH}} --CLIENT_ID $(CLIENTID) --CLIENT_SECRET $(CLIENTSECRET) --TENANT_ID $(TENANTID) --USER_NAME $(USERNAME) --PASSWORD $(PASSWORD)'

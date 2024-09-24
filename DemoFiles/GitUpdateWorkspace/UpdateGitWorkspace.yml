@@ -1,0 +1,35 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+variables:
+ - template: variables_UpdateGit.yml
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+ - stage: UpdateWorkspace
+   jobs:
+    - job: 'KeyVault'
+      steps:
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'FabricSPNConnection'
+              KeyVaultName: 'credential-store-demos'
+              SecretsFilter: '*'
+              RunAsPreJob: true
+
+          - script: pip install requests
+            displayName: 'Install requests'
+          - script: pip install msal
+            displayName: 'Install msal'
+
+
+          - task: PythonScript@0
+            inputs:
+              scriptSource: 'filePath'
+              scriptPath: 'UpdateWorkSpaceFromGit.py'
+              arguments: '--DEFFAULT_LAKEHOUSE_NAME ${{variables.DEFFAULT_LAKEHOUSE_NAME}} --UPD_NOTEBOOK_NAME ${{variables.UPD_NOTEBOOK_NAME}} --WORKSPACE_ID ${{variables.WORKSPACE_ID}}  --CLIENT_ID $(CLIENTID) --TENANT_ID $(TENANTID) --USER_NAME $(USERNAME) --PASSWORD $(PASSWORD)'

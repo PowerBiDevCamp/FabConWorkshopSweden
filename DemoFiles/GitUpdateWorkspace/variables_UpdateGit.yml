@@ -1,0 +1,4 @@
+variables:
+ DEFFAULT_LAKEHOUSE_NAME: "<Name of the default Lakehouse>"
+ UPD_NOTEBOOK_NAME: "updateWorkspaceDependencies_v1"
+ WORKSPACE_ID: "Workspace ID of destination"
