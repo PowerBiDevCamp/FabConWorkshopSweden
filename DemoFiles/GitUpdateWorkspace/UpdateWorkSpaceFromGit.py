@@ -18,7 +18,7 @@ PASSWORD = ""
 WORKSPACE_ID = ""
 #  derived variables not input variables
 DEFFAULT_LAKEHOUSE_ID = ""
-NOTEBOOB_ID = ""
+NOTEBOOK_ID = ""
  
 # Define a function to acquire token using AAD username password
 def acquire_token_user_id_password(tenant_id, client_id,user_name,password):
@@ -112,7 +112,7 @@ def update_workspace_from_GIT(workspace_id, token):
 def get_notebook_artifact_id(workspace_id, notebook_name,lakehouse_name,token):
 
     global DEFFAULT_LAKEHOUSE_ID
-    global NOTEBOOB_ID
+    global NOTEBOOK_ID
     
     print(f"Resolving IDs for given Lakehouse {lakehouse_name} and notebook {notebook_name}")
     api_url = f"{FABRIC_API_URL}/workspaces/{workspace_id}/items"
@@ -126,7 +126,7 @@ def get_notebook_artifact_id(workspace_id, notebook_name,lakehouse_name,token):
         for item in items:
             
             if item['type'] == 'Notebook' and item['displayName'] == notebook_name:
-                NOTEBOOB_ID = item['id']
+                NOTEBOOK_ID = item['id']
                 print(f"Notebook '{notebook_name}' found with ID: {item['id']}")
             elif item['type'] == 'Lakehouse' and item['displayName'] == lakehouse_name:
                 DEFFAULT_LAKEHOUSE_ID = item['id']
@@ -168,7 +168,7 @@ def invoke_fabric_notebook(workspace_id, notebook_name, lakehouse_name,token):
         }
     }
         
-        api_url = f"{FABRIC_API_URL}/workspaces/{workspace_id}/items/{NOTEBOOB_ID}/jobs/instances?jobType=RunNotebook"
+        api_url = f"{FABRIC_API_URL}/workspaces/{workspace_id}/items/{NOTEBOOK_ID}/jobs/instances?jobType=RunNotebook"
         #print(api_url) 
         headers = {"Authorization": f"Bearer {token}"}
         #print(payload)
